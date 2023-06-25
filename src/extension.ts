@@ -1,5 +1,19 @@
 import * as vscode from 'vscode'
 
+interface BracketType {
+    bracket: RegExp
+    separator: string
+    joiner: string
+    word: RegExp | undefined
+}
+
+const types: BracketType[] = [
+    { bracket: /<.*>/, separator: ' ', joiner: ' ', word: /[^<>\s]+/ },
+    { bracket: /{.*}/, separator: ',', joiner: ', ', word: /[^{}\,]+/ },
+    { bracket: /\[.*\]/, separator: ',', joiner: ', ', word: /[^[\]\,]+/ },
+    { bracket: /\(.*\)/, separator: ',', joiner: ', ', word: /[^()\,]+/ },
+]
+
 export function activate(context: vscode.ExtensionContext) {
     const moveRight = vscode.commands.registerCommand('react-organize.move-right', () => {
         moveWord(1)
@@ -14,20 +28,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
-
-interface BracketType {
-    bracket: RegExp
-    separator: string
-    joiner?: string
-    word: RegExp | undefined
-}
-
-const types: BracketType[] = [
-    { bracket: /<.*>/, separator: ' ', joiner: ' ', word: /[^<>\s]+/ },
-    { bracket: /{.*}/, separator: ',', joiner: ', ', word: /[^{}\,]+/ },
-    { bracket: /\[.*\]/, separator: ',', joiner: ', ', word: /[^[\]\,]+/ },
-    { bracket: /\(.*\)/, separator: ',', joiner: ', ', word: /[^()\,]+/ },
-]
 
 const moveWord = (dir = 1) => {
     const editor = vscode.window.activeTextEditor
@@ -85,11 +85,15 @@ const moveWord = (dir = 1) => {
     const joined = newBracketTextArray.join(bracketType.joiner)
     const newBracketText = `${bracketStart}${s}${joined}${s}${bracketEnd}`
 
-    // how position changed after replacing text
-    const editStartCharacter = bracketRange.start.character
-
-    // find where is cursorWord new position
-    const positionChange = regexIndexOf(newBracketText, new RegExp(`\\b${cursorWord}\\b`))
+    // find cursorWord new position
+    const positionChange = (() => {
+        let change = 0
+        for (const item of newBracketTextArray) {
+            if (item === cursorWord) break
+            change += item.length + bracketType!.joiner.length
+        }
+        return change + bracketType!.joiner.length
+    })()
 
     // replace text inside brackets
     editor
@@ -101,17 +105,12 @@ const moveWord = (dir = 1) => {
             editor.selection = new vscode.Selection(
                 new vscode.Position(
                     bracketRange!.start.line,
-                    editStartCharacter + positionChange,
+                    bracketRange!.start.character + positionChange,
                 ),
                 new vscode.Position(
                     bracketRange!.start.line,
-                    editStartCharacter + positionChange + cursorWord.length,
+                    bracketRange!.start.character + positionChange + cursorWord.length,
                 ),
             )
         })
-}
-
-function regexIndexOf(string: string, regex: RegExp, startpos = 0) {
-    var indexOf = string.substring(startpos).search(regex)
-    return indexOf >= 0 ? indexOf + startpos : indexOf
 }

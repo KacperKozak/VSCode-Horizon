@@ -1,8 +1,13 @@
 {
-  "name": "react-organize",
-  "displayName": "React Organize",
-  "description": "",
-  "version": "0.0.1",
+  "name": "horizon",
+  "displayName": "Horizon",
+  "description": "Move pieces of code horizontally similar to how you move them vertically with `Alt+Up` and `Alt+Down`",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KacperKozak/VSCode-Horizon"
+  },
+  "version": "1.0.0",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -14,23 +19,23 @@
   "contributes": {
     "commands": [
       {
-        "command": "react-organize.move-right",
+        "command": "horizon.move-right",
         "title": "Move right"
       },
       {
-        "command": "react-organize.move-left",
+        "command": "horizon.move-left",
         "title": "Move left"
       }
     ],
     "keybindings": [
       {
-        "command": "react-organize.move-right",
+        "command": "horizon.move-right",
         "key": "ctrl+alt+]",
         "mac": "cmd+alt+]",
         "when": "editorTextFocus"
       },
       {
-        "command": "react-organize.move-left",
+        "command": "horizon.move-left",
         "key": "ctrl+alt+[",
         "mac": "cmd+alt+[",
         "when": "editorTextFocus"
@@ -43,7 +48,9 @@
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "package": "pnpm vsce package --no-dependencies",
+    "publish": "pnpm vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/vscode": "^1.79.0",

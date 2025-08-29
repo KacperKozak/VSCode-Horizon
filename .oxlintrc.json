@@ -1,0 +1,4 @@
+{
+  "$schema": "https://oxc.rs/schema/oxlintrc.json",
+  "ignorePatterns": ["out", "dist", "node_modules", ".vscode-test", "**/*.d.ts"]
+}

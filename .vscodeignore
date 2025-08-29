@@ -1,3 +1,26 @@
+# Exclude development and CI files from the VSIX
+.git/**
+.github/**
+.vscode/**
+.cursor/**
+
+# Source and tests (we ship compiled files from out/)
+src/**
+src/test/**
+out/test/**
+tests/**
+coverage/**
+
+# Node and tooling artifacts
+node_modules/**
+**/*.map
+**/*.tsbuildinfo
+.eslintrc.*
+.prettierrc*
+jest.config.*
+tsconfig.json
+bun.lock
+.vscodeignore
 .vscode/**
 .vscode-test/**
 src/**

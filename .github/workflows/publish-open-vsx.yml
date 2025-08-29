@@ -33,6 +33,7 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: Publish
     permissions:
       contents: read
     steps:

@@ -53,4 +53,4 @@ jobs:
       - name: Publish
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
-        run: bunx --bun ovsx publish -p "$OPEN_VSX_TOKEN"
+        run: bunx --bun ovsx publish --no-dependencies --skip-duplicate -p "$OPEN_VSX_TOKEN"

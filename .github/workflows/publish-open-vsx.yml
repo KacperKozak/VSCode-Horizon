@@ -11,11 +11,36 @@ concurrency:
 
 jobs:
   test:
-    name: Run lint and unit tests
+    name: Type check, lint, build, and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect version change
+        run: |
+          CURRENT_VERSION=$(jq -r .version package.json)
+          PREV_PKG_JSON=$(git show HEAD~1:package.json 2>/dev/null || true)
+          if [ -n "$PREV_PKG_JSON" ]; then
+            PREVIOUS_VERSION=$(echo "$PREV_PKG_JSON" | jq -r .version)
+          else
+            PREVIOUS_VERSION=""
+          fi
+
+          echo "Current version: $CURRENT_VERSION"
+          echo "Previous version: ${PREVIOUS_VERSION:-<none>}"
+
+          if [ -n "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
+            echo "SHOULD_PUBLISH=false" >> $GITHUB_ENV
+          else
+            echo "SHOULD_PUBLISH=true" >> $GITHUB_ENV
+          fi
+
+      - name: Skip publishing (version unchanged)
+        if: env.SHOULD_PUBLISH != 'true'
+        run: echo "Version unchanged; skipping build and publish."
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -25,7 +50,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Run tests
+      - name: TypeScript check
+        run: bun run ts
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Build
+        run: bun run compile
+
+      - name: Unit tests
         run: bun run test
 
   publish_open_vsx:
@@ -46,12 +80,15 @@ jobs:
           bun-version: 1.2.19
 
       - name: Install dependencies
+        if: env.SHOULD_PUBLISH == 'true'
         run: bun install --frozen-lockfile
 
       - name: Build
+        if: env.SHOULD_PUBLISH == 'true'
         run: bun run compile
 
       - name: Verify OPEN_VSX_TOKEN is set
+        if: env.SHOULD_PUBLISH == 'true'
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
         run: |
@@ -61,6 +98,7 @@ jobs:
           fi
 
       - name: Publish
+        if: env.SHOULD_PUBLISH == 'true'
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
         run: bunx --bun ovsx publish --no-dependencies --skip-duplicate -p "$OPEN_VSX_TOKEN"

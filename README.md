@@ -1,4 +1,4 @@
-# VSCode Horizon
+# Horizon extension
 
 Move pieces of code horizontally similar to how you move them vertically with `Alt+Up` and `Alt+Down`.
 

@@ -50,6 +50,15 @@ jobs:
       - name: Build
         run: bun run compile
 
+      - name: Verify OPEN_VSX_TOKEN is set
+        env:
+          OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+        run: |
+          if [ -z "$OPEN_VSX_TOKEN" ]; then
+            echo "OPEN_VSX_TOKEN is not set. Please add it as a GitHub Action secret." >&2
+            exit 1
+          fi
+
       - name: Publish
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}

@@ -51,6 +51,7 @@
     "lint": "oxlint --fix",
     "test:e2e": "node ./out/test/runTest.js",
     "test": "bun test src/lib/",
+    "ts": "tsc --noEmit",
     "package": "bun vsce package --no-dependencies",
     "publish": "bun vsce publish --no-dependencies"
   },

@@ -31,4 +31,4 @@ jobs:
         run: bun run lint
 
       - name: Unit tests
-        run: bun test src/lib/
+        run: bun run test

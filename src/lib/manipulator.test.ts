@@ -13,8 +13,8 @@ describe('manipulateLine', () => {
     })
 
     it('moves array element left within brackets', () => {
-        const from = codeCursor('[a, ┇b, c]')
-        const to = codeCursor('[┇b, a, c]')
+        const from = codeCursor('[aaa, bb┇b, ccc]')
+        const to = codeCursor('[bb┇b, aaa, ccc]')
 
         const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
         expect(text).toBe(to.code)
@@ -30,8 +30,8 @@ describe('manipulateLine', () => {
     })
 
     it('moves object property right', () => {
-        const from = codeCursor('const o = { a: 1, ┇b: 2, c: 3 }')
-        const to = codeCursor('const o = { a: 1, c: 3, ┇b: 2 }')
+        const from = codeCursor('const o = { a: 1, b:┇ 2, c: 3 }')
+        const to = codeCursor('const o = { a: 1, c: 3, b:┇ 2 }')
 
         const { text, cursor } = manipulateLine(from.code, from.cursor, +1)
         expect(text).toBe(to.code)

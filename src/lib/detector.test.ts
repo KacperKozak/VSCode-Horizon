@@ -26,7 +26,7 @@ describe('detectEnvironment', () => {
     })
 
     it('should detect array environment', () => {
-        const result = detectWithCursor('[ 1, 2, 3, ┇4 ]')
+        const result = detectWithCursor('[1, 2, 3, 4┇]')
         expect(result.env).toBe(EnvKind.Array)
         expect(result.scopedCode).toBe('1, 2, 3, 4')
     })

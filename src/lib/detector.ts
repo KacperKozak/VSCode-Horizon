@@ -22,7 +22,7 @@ const findEnclosingPair = (
                 else if (c === close) {
                     depth--
                     if (depth === 0) {
-                        if (i < cursorIndex && cursorIndex < j)
+                        if (i < cursorIndex && cursorIndex <= j)
                             return { open, close, openIndex: i, closeIndex: j }
                         break
                     }
@@ -100,6 +100,7 @@ export const detectEnvironment = (codeLine: string, cursorIndex: number): Detect
                 ) {
                     const innerStart = nested.openIndex + 1
                     const innerEnd = nested.closeIndex - 1
+                    const innerText = codeLine.slice(innerStart, innerEnd + 1)
                     let scopeStart = innerStart
                     while (scopeStart <= innerEnd && /\s/.test(codeLine[scopeStart]))
                         scopeStart++
@@ -110,7 +111,11 @@ export const detectEnvironment = (codeLine: string, cursorIndex: number): Detect
                         return { env: EnvKind.Array, scope: [scopeStart, scopeEnd] }
                     }
                     if (nested.open === '{' && nested.close === '}') {
-                        return { env: EnvKind.Object, scope: [scopeStart, scopeEnd] }
+                        // Only treat as object literal if inner content looks like object properties
+                        if (/:/.test(innerText)) {
+                            return { env: EnvKind.Object, scope: [scopeStart, scopeEnd] }
+                        }
+                        // otherwise it's a generic expression inside a prop -> keep ReactComponent
                     }
                     if (nested.open === '(' && nested.close === ')') {
                         if (/\)\s*=>/.test(codeLine)) {
@@ -179,7 +184,7 @@ export const detectEnvironment = (codeLine: string, cursorIndex: number): Detect
             openIndex !== -1 &&
             closeIndex !== -1 &&
             openIndex < cursorIndex &&
-            cursorIndex < closeIndex
+            cursorIndex <= closeIndex
         ) {
             return { openIndex, closeIndex }
         }

@@ -6,4 +6,5 @@ export enum EnvKind {
     FunctionParams = 'fn-params',
     Logical = 'logical',
     Union = 'union',
+    TypeParams = 'type-params',
 }

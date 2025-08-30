@@ -198,7 +198,8 @@ export const splitScope = (content: string, env: EnvKind): Chunk[] => {
     if (
         env === EnvKind.Array ||
         env === EnvKind.Object ||
-        env === EnvKind.FunctionParams
+        env === EnvKind.FunctionParams ||
+        env === EnvKind.TypeParams
     ) {
         return splitByCommas(content)
     }

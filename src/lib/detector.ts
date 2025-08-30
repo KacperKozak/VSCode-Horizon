@@ -35,10 +35,68 @@ const findEnclosingPair = (
 
 export const detectEnvironment = (codeLine: string, cursorIndex: number): Detection => {
     // High-level pattern flags
-    const isReact = /<[A-Z][A-Za-z0-9*[\s/>]/.test(codeLine)
     const isUnion =
         /['"`][^'"`]*\|[^'"`]*['"`]/.test(codeLine) || /\b\w+\s*\|\s*\w+/.test(codeLine)
     const isLogical = /(?:&&|\|\|)/.test(codeLine)
+
+    // Detect TypeScript type parameter lists enclosed in <...>
+    // Prefer this over JSX when heuristics indicate generics
+    const anglePair = (() => {
+        for (let i = cursorIndex; i >= 0; i--) {
+            if (codeLine[i] !== '<') continue
+            // find matching '>' respecting nested angle brackets and quotes
+            let depth = 0
+            let quote: string | undefined
+            let closeAt = -1
+            for (let j = i; j < codeLine.length; j++) {
+                const c = codeLine[j]
+                const p = codeLine[j - 1]
+                if (quote) {
+                    if (c === quote && p !== '\\') quote = undefined
+                    continue
+                }
+                if (c === '"' || c === "'" || c === '`') {
+                    quote = c
+                    continue
+                }
+                if (c === '<') depth++
+                else if (c === '>') {
+                    depth--
+                    if (depth === 0) {
+                        closeAt = j
+                        break
+                    }
+                }
+            }
+            if (closeAt === -1) continue
+            if (!(i < cursorIndex && cursorIndex <= closeAt)) continue
+            // decide if this looks like type params rather than JSX
+            let li = i - 1
+            while (li >= 0 && /\s/.test(codeLine[li])) li--
+            let ri = closeAt + 1
+            while (ri < codeLine.length && /\s/.test(codeLine[ri])) ri++
+            const leftChar = codeLine[li]
+            const rightChar = codeLine[ri]
+            const looksLikeAfterName = !!leftChar && /[A-Za-z0-9_\]]/.test(leftChar)
+            const looksLikeFnGeneric = rightChar === '('
+            if (looksLikeAfterName || looksLikeFnGeneric) {
+                return { openIndex: i, closeIndex: closeAt }
+            }
+        }
+        return undefined
+    })()
+
+    if (anglePair) {
+        const innerStart = anglePair.openIndex + 1
+        const innerEnd = anglePair.closeIndex - 1
+        let s = innerStart
+        while (s <= innerEnd && /\s/.test(codeLine[s])) s++
+        let e = innerEnd
+        while (e >= innerStart && /\s/.test(codeLine[e])) e--
+        return { env: EnvKind.TypeParams, scope: [s, e] }
+    }
+
+    const isReact = /<[A-Z][A-Za-z0-9*[\s/>]/.test(codeLine)
 
     // React: scope is props between tag name end and '>' (ignoring '=>')
     if (isReact) {

@@ -87,6 +87,26 @@ describe('detectEnvironment', () => {
         expect(result.scopedCode).toBe("'a' | 'b' | 'c'")
     })
 
+    it('should detect type parameters on interface', () => {
+        const result = detectWithCursor(
+            'interface Test<T, T = string, X extends Something┇> {}',
+        )
+        expect(result.env).toBe(EnvKind.TypeParams)
+        expect(result.scopedCode).toBe('T, T = string, X extends Something')
+    })
+
+    it('should detect type parameters on class', () => {
+        const result = detectWithCursor('class Box<T extends Item, U = number┇> {}')
+        expect(result.env).toBe(EnvKind.TypeParams)
+        expect(result.scopedCode).toBe('T extends Item, U = number')
+    })
+
+    it('should detect type parameters on function', () => {
+        const result = detectWithCursor('const fn = <T, U extends X┇>(a: T, b: U) => {}')
+        expect(result.env).toBe(EnvKind.TypeParams)
+        expect(result.scopedCode).toBe('T, U extends X')
+    })
+
     it('should detect nested object inside array (cursor inside object)', () => {
         const result = detectWithCursor('[ {┇a:1, b:2}, 1, 2, 3 ]')
         expect(result.env).toBe(EnvKind.Object)

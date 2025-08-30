@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.0.2 - 2025-08-30
+
+- Fix: Preserve cursor column after horizontal moves (arrays, objects, unions, logical expressions, JSX props)
+- Fix: Treat cursor at a closing bracket as inside the enclosing pair for environment detection
+
 ## 2.0.0 - 2025-08-30
 
 - Swapped old compute logic for a new manipulation engine. Now it should handle more cases and edge cases

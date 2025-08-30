@@ -41,6 +41,37 @@ const reorderByMoving = (
     return chunks.map((c) => (c.kind === 'element' ? { ...c, text: order[k++] } : c))
 }
 
+const simpleSplit = (
+    content: string,
+): { kind: 'element' | 'separator'; text: string }[] => {
+    const chunks: { kind: 'element' | 'separator'; text: string }[] = []
+    let current = ''
+    const isWord = (ch: string) => /[A-Za-z0-9_$]/.test(ch)
+    let currentKind: 'element' | 'separator' | undefined = undefined
+
+    for (let i = 0; i < content.length; i++) {
+        const ch = content[i]
+        const nextIsWord = isWord(ch)
+        if (currentKind === undefined) {
+            currentKind = nextIsWord ? 'element' : 'separator'
+            current = ch
+            continue
+        }
+        if ((currentKind === 'element') === nextIsWord) {
+            current += ch
+        } else {
+            chunks.push({ kind: currentKind, text: current })
+            currentKind = nextIsWord ? 'element' : 'separator'
+            current = ch
+        }
+    }
+    if (currentKind) chunks.push({ kind: currentKind, text: current })
+
+    // Trim leading/trailing separators into surrounding context by keeping them as separators
+    // and normalizing element texts (no trimming to preserve exact positions)
+    return chunks
+}
+
 export const manipulateLine = (
     line: string,
     cursor: number,
@@ -48,17 +79,21 @@ export const manipulateLine = (
 ): ManipulateResult => {
     const detection = detectEnvironment(line, cursor)
     const env = detection.env
-    if (env === EnvKind.Simple || detection.scope === undefined) {
-        return { text: line, cursor }
-    }
 
-    const [s, e] = detection.scope
-    const scopeContent = line.slice(s, e + 1)
-    const chunks = splitScope(scopeContent, env)
+    let s = 0
+    let e = line.length - 1
+    let chunks: { kind: 'element' | 'separator'; text: string }[]
+
+    if (env === EnvKind.Simple || detection.scope === undefined) {
+        chunks = simpleSplit(line)
+    } else {
+        ;[s, e] = detection.scope
+        const scopeContent = line.slice(s, e + 1)
+        chunks = splitScope(scopeContent, env)
+    }
 
     const relativeCursor = cursor - s
     const fromElemIdx = findElementIndexAt(chunks, relativeCursor)
-    // compute offset within the element where the cursor currently is
     const getElementStartAndLength = (
         list: { kind: 'element' | 'separator'; text: string }[],
         elemIdx: number,
@@ -81,7 +116,6 @@ export const manipulateLine = (
     )
     let toElemIdx = fromElemIdx + delta
 
-    // Generic reorder for all envs (React props are scoped to props only by detector)
     const afterMove = reorderByMoving(chunks, fromElemIdx, toElemIdx)
     if (afterMove === chunks) return { text: line, cursor }
     const newScope = joinChunks(afterMove)

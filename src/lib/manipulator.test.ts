@@ -167,4 +167,31 @@ describe('manipulateLine', () => {
         expect(text).toBe(to.code)
         expect(cursor).toBe(to.cursor)
     })
+
+    it('reorders plain words separated by spaces (simple env)', () => {
+        const from = codeCursor('aaa ┇bbb ccc')
+        const to = codeCursor('┇bbb aaa ccc')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('reorders identifiers around dot separators (simple env)', () => {
+        const from = codeCursor('user.┇name.length')
+        const to = codeCursor('user.length.┇name')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, +1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('reorders across mixed comma and semicolon separators (simple env)', () => {
+        const from = codeCursor('a, ┇b; c')
+        const to = codeCursor('a, c; ┇b')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, +1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
 })

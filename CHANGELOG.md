@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.2.0 - 2025-08-31
+
+- Add: Detect and handle class lists in React props (className strings and `cn()` calls) enabling correct reordering of class tokens while respecting quotes and Tailwind arbitrary values
+  - e.g. `className="p-2 bg-white text-sm"`, `className={cn("p-2 bg-white", isActive && "text-blue-600")}`
+- Add: Detect and handle class lists in HTML-like tags via `class="..."` (non-React)
+  - e.g. `<div class="p-2 bg-white text-sm"></div>`
+- Add: Simple environment support — reorder plain words/identifiers and across mixed separators in non-bracketed text
+  - e.g. `alpha beta gamma`, `user.profile.name`
+
 ## 2.1.0 - 2025-08-30
 
 - Add: TypeScript generics support (detect and reorder `<T, U extends X, ...>`)

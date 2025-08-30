@@ -1,0 +1,25 @@
+---
+globs: CHANGELOG.md
+alwaysApply: false
+---
+
+Guidelines for CHANGELOG entries
+
+- Only include user-facing changes. Exclude refactors, internal utilities, and test-only updates.
+- Wrap code identifiers, functions, and commands in backticks, e.g., `cn()`, `EnvKind`, `ChunkKind`.
+- Prefer concise bullets. Avoid implementation detail.
+- Group multiple items under one version chronologically.
+- Treat commits whose subject is just a version like `v2.x.x` as bump commits; to find changes, look at the previous commit.
+
+Examples
+
+- Good:
+    - Add: Detect and handle class lists in React props (className strings and `cn()` calls)
+        - e.g. `className="p-2 bg-white text-sm"`, `className={cn("p-2 bg-white", isActive && "text-blue-600")}`
+    - Fix: Preserve cursor column after horizontal moves in arrays/objects/unions/JSX
+    - Add: Simple environment support — reorder plain words/identifiers in non-bracketed text
+        - e.g. `alpha beta gamma`, `user.profile.name`
+- Bad:
+    - Refactor: Split `detector.ts` into helpers
+    - Tests: Update unit tests for splitter
+    - Chore: Move types to `src/types/`

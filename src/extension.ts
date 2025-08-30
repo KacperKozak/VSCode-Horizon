@@ -23,7 +23,7 @@ const moveWord = (dir = 1) => {
     const cursorAnchor = editor.selection.anchor
     const currentLine = editor.document.lineAt(cursorAnchor.line).text
 
-    const { text } = manipulateLine(
+    const { text, cursor } = manipulateLine(
         currentLine,
         cursorAnchor.character,
         (dir === 1 ? 1 : -1) as 1 | -1,
@@ -37,7 +37,7 @@ const moveWord = (dir = 1) => {
             editBuilder.replace(lineRange, text)
         })
         .then(() => {
-            const newChar = Math.min(cursorAnchor.character, text.length)
+            const newChar = Math.min(cursor, text.length)
             const pos = new vscode.Position(cursorAnchor.line, newChar)
             editor.selection = new vscode.Selection(pos, pos)
         })

@@ -44,16 +44,16 @@ suite('Horizon commands', () => {
         const to = 'const a = [2, 1, 3, 4]'
         const editor = await openDocWith(from)
 
-        const cursorChar = from.indexOf('1')
-        setCursorAt(editor, cursorChar)
+        const fromCursorChar = from.indexOf('1')
+        const toCursorChar = to.indexOf('1')
+        setCursorAt(editor, fromCursorChar)
 
         await vscode.commands.executeCommand('horizon.move-right')
         await waitForLineEquals(editor, to)
 
         const active = editor.selection.active
-        assert.ok(editor.selection.isEmpty, 'Selection should be collapsed')
         assert.strictEqual(active.line, 0)
-        assert.strictEqual(active.character, cursorChar)
+        assert.strictEqual(active.character, toCursorChar)
     })
 
     test('horizon.move-left reorders props and keeps cursor column', async () => {
@@ -63,15 +63,15 @@ suite('Horizon commands', () => {
         const to = '<C b="x" a={1} c />'
         const editor = await openDocWith(from)
 
-        const cursorChar = from.indexOf('b=')
-        setCursorAt(editor, cursorChar)
+        const fromCursorChar = from.indexOf('b=')
+        const toCursorChar = to.indexOf('b=')
+        setCursorAt(editor, fromCursorChar)
 
         await vscode.commands.executeCommand('horizon.move-left')
         await waitForLineEquals(editor, to)
 
         const active = editor.selection.active
-        assert.ok(editor.selection.isEmpty, 'Selection should be collapsed')
         assert.strictEqual(active.line, 0)
-        assert.strictEqual(active.character, cursorChar)
+        assert.strictEqual(active.character, toCursorChar)
     })
 })

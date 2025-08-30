@@ -1,67 +1,60 @@
 import { detectEnvironment } from './detector'
 import { splitScope } from './splitter'
 import { EnvKind } from '../types/EnvKind'
+import { Chunk, ChunkKind } from '../types/Chunk'
 
 export interface ManipulateResult {
     text: string
     cursor: number
 }
 
-const joinChunks = (chunks: { kind: 'element' | 'separator'; text: string }[]): string =>
-    chunks.map((c) => c.text).join('')
+const joinChunks = (chunks: Chunk[]): string => chunks.map((c) => c.text).join('')
 
-const findElementIndexAt = (
-    chunks: { kind: 'element' | 'separator'; text: string }[],
-    relativeIndex: number,
-): number => {
+const findElementIndexAt = (chunks: Chunk[], relativeIndex: number): number => {
     let pos = 0
     for (let i = 0, elemIdx = 0; i < chunks.length; i++) {
         const ch = chunks[i]
         const nextPos = pos + ch.text.length
         if (relativeIndex >= pos && relativeIndex < nextPos) {
-            return ch.kind === 'separator' ? Math.max(0, elemIdx - 1) : elemIdx
+            return ch.kind === ChunkKind.Separator ? Math.max(0, elemIdx - 1) : elemIdx
         }
-        if (ch.kind === 'element') elemIdx++
+        if (ch.kind === ChunkKind.Element) elemIdx++
         pos = nextPos
     }
-    return Math.max(0, chunks.filter((c) => c.kind === 'element').length - 1)
+    return Math.max(0, chunks.filter((c) => c.kind === ChunkKind.Element).length - 1)
 }
 
-const reorderByMoving = (
-    chunks: { kind: 'element' | 'separator'; text: string }[],
-    fromIdx: number,
-    toIdx: number,
-) => {
-    const elements = chunks.filter((c) => c.kind === 'element')
+const reorderByMoving = (chunks: Chunk[], fromIdx: number, toIdx: number) => {
+    const elements = chunks.filter((c) => c.kind === ChunkKind.Element)
     if (toIdx < 0 || toIdx >= elements.length) return chunks
     const order = elements.map((e) => e.text)
     const [moved] = order.splice(fromIdx, 1)
     order.splice(toIdx, 0, moved)
     let k = 0
-    return chunks.map((c) => (c.kind === 'element' ? { ...c, text: order[k++] } : c))
+    return chunks.map((c) =>
+        c.kind === ChunkKind.Element ? { ...c, text: order[k++] } : c,
+    )
 }
 
-const simpleSplit = (
-    content: string,
-): { kind: 'element' | 'separator'; text: string }[] => {
-    const chunks: { kind: 'element' | 'separator'; text: string }[] = []
+const simpleSplit = (content: string): Chunk[] => {
+    const chunks: Chunk[] = []
     let current = ''
     const isWord = (ch: string) => /[A-Za-z0-9_$]/.test(ch)
-    let currentKind: 'element' | 'separator' | undefined = undefined
+    let currentKind: ChunkKind | undefined = undefined
 
     for (let i = 0; i < content.length; i++) {
         const ch = content[i]
         const nextIsWord = isWord(ch)
         if (currentKind === undefined) {
-            currentKind = nextIsWord ? 'element' : 'separator'
+            currentKind = nextIsWord ? ChunkKind.Element : ChunkKind.Separator
             current = ch
             continue
         }
-        if ((currentKind === 'element') === nextIsWord) {
+        if ((currentKind === ChunkKind.Element) === nextIsWord) {
             current += ch
         } else {
             chunks.push({ kind: currentKind, text: current })
-            currentKind = nextIsWord ? 'element' : 'separator'
+            currentKind = nextIsWord ? ChunkKind.Element : ChunkKind.Separator
             current = ch
         }
     }
@@ -82,7 +75,7 @@ export const manipulateLine = (
 
     let s = 0
     let e = line.length - 1
-    let chunks: { kind: 'element' | 'separator'; text: string }[]
+    let chunks: Chunk[]
 
     if (env === EnvKind.Simple || detection.scope === undefined) {
         chunks = simpleSplit(line)
@@ -95,13 +88,13 @@ export const manipulateLine = (
     const relativeCursor = cursor - s
     const fromElemIdx = findElementIndexAt(chunks, relativeCursor)
     const getElementStartAndLength = (
-        list: { kind: 'element' | 'separator'; text: string }[],
+        list: Chunk[],
         elemIdx: number,
     ): { start: number; length: number } => {
         let pos = 0
         let seen = 0
         for (const c of list) {
-            if (c.kind === 'element') {
+            if (c.kind === ChunkKind.Element) {
                 if (seen === elemIdx) return { start: pos, length: c.text.length }
                 seen++
             }
@@ -123,7 +116,10 @@ export const manipulateLine = (
 
     const movedIdx = Math.max(
         0,
-        Math.min(toElemIdx, afterMove.filter((c) => c.kind === 'element').length - 1),
+        Math.min(
+            toElemIdx,
+            afterMove.filter((c) => c.kind === ChunkKind.Element).length - 1,
+        ),
     )
     const movedLoc = getElementStartAndLength(afterMove, movedIdx)
     const newRelative = movedLoc.start + Math.min(withinOffset, movedLoc.length)

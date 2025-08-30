@@ -1,13 +1,6 @@
 import { EnvKind } from '../types/EnvKind'
-
-export interface Chunk {
-    kind: 'element' | 'separator'
-    text: string
-}
-
-const isOpening = (c: string) => c === '[' || c === '{' || c === '('
-const isClosing = (c: string) => c === ']' || c === '}' || c === ')'
-const matching: Record<string, string> = { '[': ']', '{': '}', '(': ')' }
+import { Chunk, ChunkKind } from '../types/Chunk'
+import { isOpening, isClosing, matching } from '../utils/brackets'
 
 const splitByCommas = (content: string): Chunk[] => {
     const chunks: Chunk[] = []
@@ -28,17 +21,17 @@ const splitByCommas = (content: string): Chunk[] => {
         }
         if (ch === ',' && stack.length === 0) {
             if (current.length > 0) {
-                chunks.push({ kind: 'element', text: current.trim() })
+                chunks.push({ kind: ChunkKind.Element, text: current.trim() })
                 current = ''
             }
             const sep = next === ' ' ? ', ' : ','
-            chunks.push({ kind: 'separator', text: sep })
+            chunks.push({ kind: ChunkKind.Separator, text: sep })
             if (next === ' ') i++
             continue
         }
         current += ch
     }
-    if (current.length > 0) chunks.push({ kind: 'element', text: current.trim() })
+    if (current.length > 0) chunks.push({ kind: ChunkKind.Element, text: current.trim() })
     return chunks
 }
 
@@ -73,17 +66,17 @@ const splitByPipesTopLevel = (content: string): Chunk[] => {
         if (ch === '|' && !quote && stack.length === 0) {
             // finalize current element, trim outer spaces
             if (current.length > 0) {
-                chunks.push({ kind: 'element', text: current.trim() })
+                chunks.push({ kind: ChunkKind.Element, text: current.trim() })
                 current = ''
             }
             const sep = next === ' ' && content[i - 1] === ' ' ? ' | ' : '|'
-            chunks.push({ kind: 'separator', text: sep })
+            chunks.push({ kind: ChunkKind.Separator, text: sep })
             if (next === ' ') i++
             continue
         }
         current += ch
     }
-    if (current.length > 0) chunks.push({ kind: 'element', text: current.trim() })
+    if (current.length > 0) chunks.push({ kind: ChunkKind.Element, text: current.trim() })
     return chunks
 }
 
@@ -98,7 +91,8 @@ const splitLogical = (content: string): Chunk[] => {
             let end = current.length - 1
             while (end >= 0 && current[end] === ' ') end--
             const trimmed = current.slice(0, end + 1)
-            if (trimmed.length > 0) chunks.push({ kind: 'element', text: trimmed })
+            if (trimmed.length > 0)
+                chunks.push({ kind: ChunkKind.Element, text: trimmed })
             current = ''
         }
     }
@@ -136,7 +130,7 @@ const splitLogical = (content: string): Chunk[] => {
             const hasRightSpace = afterOp === ' '
             const op = isAnd ? '&&' : '||'
             const sep = `${hasLeftSpace ? ' ' : ''}${op}${hasRightSpace ? ' ' : ''}`
-            chunks.push({ kind: 'separator', text: sep })
+            chunks.push({ kind: ChunkKind.Separator, text: sep })
             if (hasRightSpace) i += 2
             else i += 1
             continue
@@ -154,7 +148,7 @@ const splitProps = (content: string): Chunk[] => {
     const stack: string[] = []
     const pushElement = () => {
         if (current.length > 0) {
-            chunks.push({ kind: 'element', text: current })
+            chunks.push({ kind: ChunkKind.Element, text: current })
             current = ''
         }
     }
@@ -185,7 +179,7 @@ const splitProps = (content: string): Chunk[] => {
             pushElement()
             // skip additional spaces
             while (content[i + 1] === ' ') i++
-            chunks.push({ kind: 'separator', text: ' ' })
+            chunks.push({ kind: ChunkKind.Separator, text: ' ' })
             continue
         }
         current += ch
@@ -201,7 +195,7 @@ const splitClassList = (content: string): Chunk[] => {
     let bracketDepth = 0 // only track square brackets used by Tailwind arbitrary values
     const pushElement = () => {
         if (current.length > 0) {
-            chunks.push({ kind: 'element', text: current })
+            chunks.push({ kind: ChunkKind.Element, text: current })
             current = ''
         }
     }
@@ -232,7 +226,7 @@ const splitClassList = (content: string): Chunk[] => {
             // collapse consecutive spaces into a single separator between tokens
             pushElement()
             while (content[i + 1] === ' ') i++
-            chunks.push({ kind: 'separator', text: ' ' })
+            chunks.push({ kind: ChunkKind.Separator, text: ' ' })
             continue
         }
         current += ch
@@ -262,5 +256,5 @@ export const splitScope = (content: string, env: EnvKind): Chunk[] => {
     if (env === EnvKind.ClassList) {
         return splitClassList(content)
     }
-    return [{ kind: 'element', text: content }]
+    return [{ kind: ChunkKind.Element, text: content }]
 }

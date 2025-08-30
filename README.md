@@ -31,7 +31,7 @@ Default keybindings:
 
 ## How it works (briefly)
 
-Under the hood, Horizon detects the current environment (array, object, function params, union, logical expression, or JSX props), splits it into chunks, then swaps elements while preserving separators and whitespace. The cursor remains a single caret at your original column, so you can keep moving without.
+Under the hood, Horizon detects the current environment (array, object, function params, union, logical expression, or JSX props), splits it into chunks, then swaps elements while preserving separators and whitespace. The cursor remains connected to the original element when you move, so you can keep moving it forward or backward.
 
 ## Testing
 

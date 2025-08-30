@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.1.0 - 2025-08-30
+
+- Add: TypeScript generics support (detect and reorder `<T, U extends X, ...>`)
+
 ## 2.0.2 - 2025-08-30
 
 - Fix: Preserve cursor column after horizontal moves (arrays, objects, unions, logical expressions, JSX props)

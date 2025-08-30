@@ -121,6 +121,18 @@ describe('detectEnvironment', () => {
         expect(result.scopedCode).toBe('text-primary hover:bg-secondary')
     })
 
+    it('should detect class list inside HTML class attribute (double quotes)', () => {
+        const result = detectWithCursor('<div class="size-4 ┇animate-spin"></div>')
+        expect(result.env).toBe(EnvKind.ClassList)
+        expect(result.scopedCode).toBe('size-4 animate-spin')
+    })
+
+    it('should detect class list inside HTML class attribute (single quotes)', () => {
+        const result = detectWithCursor("<span class='p-2 ┇text-sm'></span>")
+        expect(result.env).toBe(EnvKind.ClassList)
+        expect(result.scopedCode).toBe('p-2 text-sm')
+    })
+
     it('should detect nested object inside array (cursor inside object)', () => {
         const result = detectWithCursor('[ {┇a:1, b:2}, 1, 2, 3 ]')
         expect(result.env).toBe(EnvKind.Object)

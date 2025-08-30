@@ -168,6 +168,15 @@ describe('manipulateLine', () => {
         expect(cursor).toBe(to.cursor)
     })
 
+    it('reorders classes inside HTML class attribute', () => {
+        const from = codeCursor('<div class="bg red ┇large"></div>')
+        const to = codeCursor('<div class="bg ┇large red"></div>')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
     it('reorders plain words separated by spaces (simple env)', () => {
         const from = codeCursor('aaa ┇bbb ccc')
         const to = codeCursor('┇bbb aaa ccc')

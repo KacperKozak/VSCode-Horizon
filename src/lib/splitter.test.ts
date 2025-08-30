@@ -99,4 +99,22 @@ describe('splitScope', () => {
         const chunks = splitScope(scope, EnvKind.ReactComponent)
         expect(texts(chunks)).toEqual(['className="bg red large"', ' ', 'data-id={1}'])
     })
+
+    it('splits HTML-like props by spaces, preserving quoted class value', () => {
+        const scope = 'class="bg red large" id="i1"'
+        const chunks = splitScope(scope, EnvKind.ReactComponent)
+        expect(texts(chunks)).toEqual(['class="bg red large"', ' ', 'id="i1"'])
+    })
+
+    it('splits class list content by spaces respecting Tailwind arbitrary values', () => {
+        const scope = "bg [content:'a b'] hover:[&>*]:text-sm"
+        const chunks = splitScope(scope, EnvKind.ClassList)
+        expect(texts(chunks)).toEqual([
+            'bg',
+            ' ',
+            "[content:'a b']",
+            ' ',
+            'hover:[&>*]:text-sm',
+        ])
+    })
 })

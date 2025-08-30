@@ -88,8 +88,9 @@ const detectReact = (
     cursorIndex: number,
     isLogical: boolean,
 ): Detection | undefined => {
-    const isReact = /<[A-Z][A-Za-z0-9*[\s/>]/.test(codeLine)
-    if (!isReact) return undefined
+    // Support both React components (PascalCase) and HTML/framework tags (lowercase, kebab, namespaced)
+    const looksLikeTag = /<[A-Za-z][A-Za-z0-9:_-]*[\s/>]/.test(codeLine)
+    if (!looksLikeTag) return undefined
 
     let lt = -1
     for (let i = cursorIndex; i >= 0; i--) {
@@ -102,7 +103,7 @@ const detectReact = (
 
     let i = lt + 1
     while (codeLine[i] === ' ') i++
-    while (/[A-Za-z0-9_.]/.test(codeLine[i] || '')) i++
+    while (/[A-Za-z0-9:._-]/.test(codeLine[i] || '')) i++
     const tagEnd = i - 1
 
     let gt = -1

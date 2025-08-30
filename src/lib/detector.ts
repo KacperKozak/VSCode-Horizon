@@ -147,6 +147,38 @@ export const detectEnvironment = (codeLine: string, cursorIndex: number): Detect
                 while (e > s && /\s/.test(codeLine[e])) e--
                 if (codeLine[e] === '/') e--
                 while (e > s && /\s/.test(codeLine[e])) e--
+                // If inside a quoted string value of className/class -> ClassList
+                const findClassStringScope = (): [number, number] | undefined => {
+                    // find opening quote to the left of cursor within props
+                    for (let q = cursorIndex; q >= s; q--) {
+                        const ch = codeLine[q]
+                        if (ch !== '"' && ch !== "'") continue
+                        const prev = codeLine[q - 1]
+                        if (prev === '\\') continue
+                        // find closing quote to the right
+                        let close = -1
+                        for (let j = q + 1; j <= e; j++) {
+                            const cj = codeLine[j]
+                            if (cj === ch && codeLine[j - 1] !== '\\') {
+                                close = j
+                                break
+                            }
+                        }
+                        if (close !== -1 && q < cursorIndex && cursorIndex <= close) {
+                            const before = codeLine.slice(s, q)
+                            const hasClassProp =
+                                before.lastIndexOf('className=') !== -1 ||
+                                before.lastIndexOf('class=') !== -1
+                            if (hasClassProp) return [q + 1, close - 1]
+                            break
+                        }
+                    }
+                    return undefined
+                }
+                const classStringScope = findClassStringScope()
+                if (classStringScope) {
+                    return { env: EnvKind.ClassList, scope: classStringScope }
+                }
                 // If cursor is inside a nested pair within props (e.g. array/object/params),
                 // prefer the nested environment over the generic React component.
                 const nested = findEnclosingPair(codeLine, cursorIndex)

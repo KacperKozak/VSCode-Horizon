@@ -194,6 +194,53 @@ const splitProps = (content: string): Chunk[] => {
     return chunks
 }
 
+const splitClassList = (content: string): Chunk[] => {
+    const chunks: Chunk[] = []
+    let current = ''
+    let inQuote: string | undefined
+    let bracketDepth = 0 // only track square brackets used by Tailwind arbitrary values
+    const pushElement = () => {
+        if (current.length > 0) {
+            chunks.push({ kind: 'element', text: current })
+            current = ''
+        }
+    }
+    for (let i = 0; i < content.length; i++) {
+        const ch = content[i]
+        const prev = content[i - 1]
+        if (inQuote) {
+            if (ch === inQuote && prev !== '\\') inQuote = undefined
+            current += ch
+            continue
+        }
+        if (ch === '"' || ch === "'") {
+            inQuote = ch
+            current += ch
+            continue
+        }
+        if (ch === '[') {
+            bracketDepth++
+            current += ch
+            continue
+        }
+        if (ch === ']' && bracketDepth > 0) {
+            bracketDepth--
+            current += ch
+            continue
+        }
+        if (ch === ' ' && bracketDepth === 0) {
+            // collapse consecutive spaces into a single separator between tokens
+            pushElement()
+            while (content[i + 1] === ' ') i++
+            chunks.push({ kind: 'separator', text: ' ' })
+            continue
+        }
+        current += ch
+    }
+    pushElement()
+    return chunks
+}
+
 export const splitScope = (content: string, env: EnvKind): Chunk[] => {
     if (
         env === EnvKind.Array ||
@@ -211,6 +258,9 @@ export const splitScope = (content: string, env: EnvKind): Chunk[] => {
     }
     if (env === EnvKind.ReactComponent) {
         return splitProps(content)
+    }
+    if (env === EnvKind.ClassList) {
+        return splitClassList(content)
     }
     return [{ kind: 'element', text: content }]
 }

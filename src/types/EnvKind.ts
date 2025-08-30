@@ -7,4 +7,5 @@ export enum EnvKind {
     Logical = 'logical',
     Union = 'union',
     TypeParams = 'type-params',
+    ClassList = 'class-list',
 }

@@ -107,6 +107,20 @@ describe('detectEnvironment', () => {
         expect(result.scopedCode).toBe('T, U extends X')
     })
 
+    it('should detect class list inside className string', () => {
+        const result = detectWithCursor('<C className="size-4 ┇animate-spin" />')
+        expect(result.env).toBe(EnvKind.ClassList)
+        expect(result.scopedCode).toBe('size-4 animate-spin')
+    })
+
+    it('should detect class list inside cn() call in prop', () => {
+        const result = detectWithCursor(
+            "<Card className={cn('transition-all', isActive ? 'bg-primary text-background' : 'text-primary hover:bg-┇secondary')} />",
+        )
+        expect(result.env).toBe(EnvKind.ClassList)
+        expect(result.scopedCode).toBe('text-primary hover:bg-secondary')
+    })
+
     it('should detect nested object inside array (cursor inside object)', () => {
         const result = detectWithCursor('[ {┇a:1, b:2}, 1, 2, 3 ]')
         expect(result.env).toBe(EnvKind.Object)

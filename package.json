@@ -47,7 +47,6 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "bun run compile && bun run lint",
     "lint": "oxlint --fix",
     "test:e2e": "node ./out/test/runTest.js",
     "test": "bun test src/lib/",

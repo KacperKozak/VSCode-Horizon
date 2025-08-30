@@ -13,6 +13,8 @@ jobs:
   test:
     name: Type check, lint, build, and test
     runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.detect.outputs.should_publish }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,6 +22,7 @@ jobs:
           fetch-depth: 2
 
       - name: Detect version change
+        id: detect
         run: |
           CURRENT_VERSION=$(jq -r .version package.json)
           PREV_PKG_JSON=$(git show HEAD~1:package.json 2>/dev/null || true)
@@ -34,12 +37,14 @@ jobs:
 
           if [ -n "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
             echo "SHOULD_PUBLISH=false" >> $GITHUB_ENV
+            echo "should_publish=false" >> $GITHUB_OUTPUT
           else
             echo "SHOULD_PUBLISH=true" >> $GITHUB_ENV
+            echo "should_publish=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Skip publishing (version unchanged)
-        if: env.SHOULD_PUBLISH != 'true'
+        if: ${{ steps.detect.outputs.should_publish != 'true' }}
         run: echo "Version unchanged; skipping build and publish."
 
       - name: Setup Bun
@@ -65,7 +70,7 @@ jobs:
   publish_open_vsx:
     name: Publish to Open VSX
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' && needs.test.outputs.should_publish == 'true' }}
     runs-on: ubuntu-latest
     environment: Publish
     permissions:
@@ -80,15 +85,12 @@ jobs:
           bun-version: 1.2.19
 
       - name: Install dependencies
-        if: env.SHOULD_PUBLISH == 'true'
         run: bun install --frozen-lockfile
 
       - name: Build
-        if: env.SHOULD_PUBLISH == 'true'
         run: bun run compile
 
       - name: Verify OPEN_VSX_TOKEN is set
-        if: env.SHOULD_PUBLISH == 'true'
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
         run: |
@@ -98,7 +100,6 @@ jobs:
           fi
 
       - name: Publish
-        if: env.SHOULD_PUBLISH == 'true'
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
         run: bunx --bun ovsx publish --no-dependencies --skip-duplicate -p "$OPEN_VSX_TOKEN"

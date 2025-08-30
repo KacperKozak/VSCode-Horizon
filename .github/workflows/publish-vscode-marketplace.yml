@@ -13,6 +13,8 @@ jobs:
   test:
     name: Type check, lint, build, and test
     runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.detect.outputs.should_publish }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,6 +22,7 @@ jobs:
           fetch-depth: 2
 
       - name: Detect version change
+        id: detect
         run: |
           CURRENT_VERSION=$(jq -r .version package.json)
           PREV_PKG_JSON=$(git show HEAD~1:package.json 2>/dev/null || true)
@@ -34,12 +37,14 @@ jobs:
 
           if [ -n "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
             echo "SHOULD_PUBLISH=false" >> $GITHUB_ENV
+            echo "should_publish=false" >> $GITHUB_OUTPUT
           else
             echo "SHOULD_PUBLISH=true" >> $GITHUB_ENV
+            echo "should_publish=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Skip publishing (version unchanged)
-        if: env.SHOULD_PUBLISH != 'true'
+        if: ${{ steps.detect.outputs.should_publish != 'true' }}
         run: echo "Version unchanged; skipping build and publish."
 
       - name: Setup Bun
@@ -65,7 +70,7 @@ jobs:
   publish_vscode_marketplace:
     name: Publish to VS Code Marketplace
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' && needs.test.outputs.should_publish == 'true' }}
     runs-on: ubuntu-latest
     environment: Publish
     permissions:
@@ -74,45 +79,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect version change
-        run: |
-          CURRENT_VERSION=$(jq -r .version package.json)
-          PREV_PKG_JSON=$(git show HEAD~1:package.json 2>/dev/null || true)
-          if [ -n "$PREV_PKG_JSON" ]; then
-            PREVIOUS_VERSION=$(echo "$PREV_PKG_JSON" | jq -r .version)
-          else
-            PREVIOUS_VERSION=""
-          fi
-
-          echo "Current version: $CURRENT_VERSION"
-          echo "Previous version: ${PREVIOUS_VERSION:-<none>}"
-
-          if [ -n "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
-            echo "SHOULD_PUBLISH=false" >> $GITHUB_ENV
-          else
-            echo "SHOULD_PUBLISH=true" >> $GITHUB_ENV
-          fi
-
       - name: Setup Bun
-        if: env.SHOULD_PUBLISH == 'true'
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: 1.2.19
 
       - name: Install dependencies
-        if: env.SHOULD_PUBLISH == 'true'
         run: bun install --frozen-lockfile
 
       - name: Build
-        if: env.SHOULD_PUBLISH == 'true'
         run: bun run compile
 
       - name: Package with vsce (no dependency pruning)
-        if: env.SHOULD_PUBLISH == 'true'
         run: bunx --bun vsce package --no-dependencies -o horizon.vsix
 
       - name: Override publisher in VSIX to KacperKozak
-        if: env.SHOULD_PUBLISH == 'true'
         run: |
           rm -rf vsix && mkdir vsix
           unzip -q horizon.vsix -d vsix
@@ -125,13 +106,11 @@ jobs:
           popd
 
       - name: Verify PAT has rights (optional)
-        if: env.SHOULD_PUBLISH == 'true'
         env:
           VSCE_PAT: ${{ secrets.MS_VSCE_TOKEN }}
         run: bunx --bun vsce verify-pat KacperKozak
 
       - name: Publish to VS Code Marketplace
-        if: env.SHOULD_PUBLISH == 'true'
         env:
           VSCE_PAT: ${{ secrets.MS_VSCE_TOKEN }}
         run: bunx --bun vsce publish --no-dependencies --skip-duplicate --packagePath horizon.KacperKozak.vsix

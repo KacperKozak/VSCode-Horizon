@@ -4,7 +4,7 @@
   "displayName": "Horizon",
   "publisher": "code-cooking",
   "description": "Move pieces of code horizontally similar to how you move them vertically with `Alt+Up` and `Alt+Down`",
-  "icon": "./logo/logo.png",
+  "icon": "logo/logo.png",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -1,4 +1,4 @@
-import { EnvKind } from '~/types/EnvKind'
+import { EnvKind } from '../types/EnvKind'
 
 export interface Chunk {
     kind: 'element' | 'separator'

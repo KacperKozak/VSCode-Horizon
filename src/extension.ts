@@ -1,22 +1,5 @@
 import * as vscode from 'vscode'
-import { computeSwapForLine } from './lib/brackets'
-
-/*
-Works for
-	[ test, test2 ]
-	{ test1: 'a', test2: 2, test }
-	[ 321, 432, 543 ]
-	
-Mostly works for (treats element name as one of elements in array)
-	<div key={i} color={color} data-test={key}>
-	
-Don't work (TODO)
-	(key: Key, value: number) => {}
-	if (some && condition || here)
-	type Union = 'a' | 'b' | 'c'
-	{ obj: { a, b }, arr: [x, y] }
-	[ [123, 123], [321, 321] ]
-*/
+import { manipulateLine } from './lib/manipulator'
 
 export function activate(context: vscode.ExtensionContext) {
     const moveRight = vscode.commands.registerCommand('horizon.move-right', () => {
@@ -40,26 +23,22 @@ const moveWord = (dir = 1) => {
     const cursorAnchor = editor.selection.anchor
     const currentLine = editor.document.lineAt(cursorAnchor.line).text
 
-    const { result } = computeSwapForLine(
+    const { text } = manipulateLine(
         currentLine,
         cursorAnchor.character,
         (dir === 1 ? 1 : -1) as 1 | -1,
     )
-    if (!result) return
+    if (text === currentLine) return
 
-    const bracketRange = new vscode.Range(
-        new vscode.Position(cursorAnchor.line, result.bracketLeft),
-        new vscode.Position(cursorAnchor.line, result.bracketRight + 1),
-    )
+    const lineRange = editor.document.lineAt(cursorAnchor.line).range
 
     editor
         .edit((editBuilder) => {
-            editBuilder.replace(bracketRange, result.newBracketText)
+            editBuilder.replace(lineRange, text)
         })
         .then(() => {
-            editor.selection = new vscode.Selection(
-                new vscode.Position(cursorAnchor.line, result.selectionStart),
-                new vscode.Position(cursorAnchor.line, result.selectionEnd),
-            )
+            const newChar = Math.min(cursorAnchor.character, text.length)
+            const pos = new vscode.Position(cursorAnchor.line, newChar)
+            editor.selection = new vscode.Selection(pos, pos)
         })
 }

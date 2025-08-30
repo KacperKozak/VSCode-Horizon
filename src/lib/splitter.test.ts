@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { splitScope } from './splitter'
-import { EnvKind } from '~/types/EnvKind'
+import { EnvKind } from '../types/EnvKind'
 
 const texts = (chunks: { text: string }[]) => chunks.map((c) => c.text)
 const kinds = (chunks: { kind: string }[]) => chunks.map((c) => c.kind)

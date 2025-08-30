@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { manipulateLine } from './manipulator'
-import { codeCursor } from '~/utils/tests'
+import { codeCursor } from '../utils/tests'
 
 describe('manipulateLine', () => {
     it('moves array element right within brackets', () => {

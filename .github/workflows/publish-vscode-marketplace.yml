@@ -67,6 +67,9 @@ jobs:
       - name: Unit tests
         run: bun run test
 
+      - name: VSCode integration tests (e2e)
+        run: xvfb-run -a bun run test:e2e
+
   publish_vscode_marketplace:
     name: Publish to VS Code Marketplace
     needs: test

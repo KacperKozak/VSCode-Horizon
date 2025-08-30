@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import { detectEnvironment } from './detector'
-import { EnvKind } from '~/types/EnvKind'
-import { codeCursor } from '~/utils/tests'
+import { EnvKind } from '../types/EnvKind'
+import { codeCursor } from '../utils/tests'
 
 const detectWithCursor = (codeWithCursor: string) => {
     const { code, cursor } = codeCursor(codeWithCursor)

@@ -1,6 +1,6 @@
 import { detectEnvironment } from './detector'
 import { splitScope } from './splitter'
-import { EnvKind } from '~/types/EnvKind'
+import { EnvKind } from '../types/EnvKind'
 
 export interface ManipulateResult {
     text: string

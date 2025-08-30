@@ -45,12 +45,14 @@
     ]
   },
   "scripts": {
+    "start": "bun run compile && bun run vscode",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "oxlint --fix",
     "test:e2e": "node ./out/test/runTest.js",
     "test": "bun test src/lib/",
-    "ts": "tsc --noEmit"
+    "ts": "tsc --noEmit",
+    "vscode": "code --extensionDevelopmentPath=. --user-data-dir=.vscode-horizon-dev --extensions-dir=.vscode-horizon-extensions"
   },
   "devDependencies": {
     "@types/bun": "latest",

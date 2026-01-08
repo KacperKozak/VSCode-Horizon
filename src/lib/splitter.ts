@@ -5,21 +5,37 @@ import { isOpening, isClosing, matching } from '../utils/brackets'
 const splitByCommas = (content: string): Chunk[] => {
     const chunks: Chunk[] = []
     let current = ''
+    let quote: string | undefined
     const stack: string[] = []
+
     for (let i = 0; i < content.length; i++) {
         const ch = content[i]
         const next = content[i + 1]
-        if (isOpening(ch)) {
+        const prev = content[i - 1]
+
+        if (!quote && isOpening(ch)) {
             stack.push(matching[ch])
             current += ch
             continue
         }
-        if (isClosing(ch)) {
+
+        if (!quote && isClosing(ch)) {
             if (stack[stack.length - 1] === ch) stack.pop()
             current += ch
             continue
         }
-        if (ch === ',' && stack.length === 0) {
+
+        if (ch === '"' || ch === "'" || ch === '`') {
+            if (quote === ch && prev !== '\\') {
+                quote = undefined
+            } else if (!quote) {
+                quote = ch
+            }
+            current += ch
+            continue
+        }
+
+        if (ch === ',' && !quote && stack.length === 0) {
             if (current.length > 0) {
                 chunks.push({ kind: ChunkKind.Element, text: current.trim() })
                 current = ''
@@ -29,8 +45,10 @@ const splitByCommas = (content: string): Chunk[] => {
             if (next === ' ') i++
             continue
         }
+
         current += ch
     }
+
     if (current.length > 0) chunks.push({ kind: ChunkKind.Element, text: current.trim() })
     return chunks
 }

@@ -188,6 +188,20 @@ const detectReact = (
     return { env: EnvKind.ReactComponent }
 }
 
+const CONTROL_KEYWORDS = ['if', 'while', 'for', 'switch', 'catch', 'with']
+
+const isFunctionCall = (codeLine: string, openIndex: number): boolean => {
+    let end = openIndex - 1
+    while (end >= 0 && /\s/.test(codeLine[end])) end--
+    if (end < 0 || !/[A-Za-z0-9_$\]]/.test(codeLine[end])) return false
+
+    let start = end
+    while (start > 0 && /[A-Za-z0-9_$]/.test(codeLine[start - 1])) start--
+    const identifier = codeLine.slice(start, end + 1)
+
+    return !CONTROL_KEYWORDS.includes(identifier)
+}
+
 const detectByNearestPair = (
     codeLine: string,
     cursorIndex: number,
@@ -205,7 +219,9 @@ const detectByNearestPair = (
     if (pair.open === '{' && pair.close === '}')
         return { env: EnvKind.Object, scope: [scopeStart, scopeEnd] }
     if (pair.open === '(' && pair.close === ')') {
-        if (/\)\s*=>/.test(codeLine))
+        const isArrowFn = /\)\s*=>/.test(codeLine)
+        const isFnCall = isFunctionCall(codeLine, pair.openIndex)
+        if (isArrowFn || isFnCall)
             return { env: EnvKind.FunctionParams, scope: [scopeStart, scopeEnd] }
     }
     if (pair.open === '<' && pair.close === '>')
@@ -247,9 +263,17 @@ const detectBySimplePairs = (
         return { env: EnvKind.Object, scope: [s, e] }
     }
     const spPar = simplePair('(', ')')
-    if (spPar && /\)\s*=>/.test(codeLine)) {
-        const [s, e] = trimInnerScope(codeLine, spPar.openIndex + 1, spPar.closeIndex - 1)
-        return { env: EnvKind.FunctionParams, scope: [s, e] }
+    if (spPar) {
+        const isArrowFn = /\)\s*=>/.test(codeLine)
+        const isFnCall = isFunctionCall(codeLine, spPar.openIndex)
+        if (isArrowFn || isFnCall) {
+            const [s, e] = trimInnerScope(
+                codeLine,
+                spPar.openIndex + 1,
+                spPar.closeIndex - 1,
+            )
+            return { env: EnvKind.FunctionParams, scope: [s, e] }
+        }
     }
     return undefined
 }

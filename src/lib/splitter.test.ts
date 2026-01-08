@@ -117,4 +117,82 @@ describe('splitScope', () => {
             'hover:[&>*]:text-sm',
         ])
     })
+
+    it('splits function params with string arguments', () => {
+        const scope = 'varA, vatB, "something"'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['varA', ', ', 'vatB', ', ', '"something"'])
+    })
+
+    it('does not split inside string literals in function params', () => {
+        const scope = 'varA, "hello, world", varC'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['varA', ', ', '"hello, world"', ', ', 'varC'])
+    })
+
+    it('handles single quotes in function params', () => {
+        const scope = "varA, 'hello, world', varC"
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['varA', ', ', "'hello, world'", ', ', 'varC'])
+    })
+
+    it('handles template literals in function params', () => {
+        const scope = 'varA, `hello, ${x}`, varC'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['varA', ', ', '`hello, ${x}`', ', ', 'varC'])
+    })
+
+    it('handles escaped quotes in function params', () => {
+        const scope = 'varA, "hello, \\"world", varC'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['varA', ', ', '"hello, \\"world"', ', ', 'varC'])
+    })
+
+    it('handles mixed nested brackets and strings in arrays', () => {
+        const scope = '1, [2, "a, b"], "c, d"'
+        const chunks = splitScope(scope, EnvKind.Array)
+        expect(texts(chunks)).toEqual(['1', ', ', '[2, "a, b"]', ', ', '"c, d"'])
+    })
+
+    it('does not treat brackets inside strings as nesting in function params', () => {
+        const scope = 'a, "text [with, brackets]", b'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['a', ', ', '"text [with, brackets]"', ', ', 'b'])
+    })
+
+    it('does not treat curly braces inside strings as nesting in function params', () => {
+        const scope = 'a, "text {with, braces}", b'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['a', ', ', '"text {with, braces}"', ', ', 'b'])
+    })
+
+    it('does not treat parentheses inside strings as nesting in function params', () => {
+        const scope = 'a, "text (with, parens)", b'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['a', ', ', '"text (with, parens)"', ', ', 'b'])
+    })
+
+    it('handles all bracket types inside strings', () => {
+        const scope = 'a, "[{(,)}]", b'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['a', ', ', '"[{(,)}]"', ', ', 'b'])
+    })
+
+    it('handles strings inside nested brackets in arrays', () => {
+        const scope = '1, {key: "value, with, commas"}, 2'
+        const chunks = splitScope(scope, EnvKind.Array)
+        expect(texts(chunks)).toEqual([
+            '1',
+            ', ',
+            '{key: "value, with, commas"}',
+            ', ',
+            '2',
+        ])
+    })
+
+    it('handles deeply nested structures with strings', () => {
+        const scope = 'a, {x: [1, "a, b", 2]}, c'
+        const chunks = splitScope(scope, EnvKind.FunctionParams)
+        expect(texts(chunks)).toEqual(['a', ', ', '{x: [1, "a, b", 2]}', ', ', 'c'])
+    })
 })

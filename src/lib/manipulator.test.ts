@@ -203,4 +203,49 @@ describe('manipulateLine', () => {
         expect(text).toBe(to.code)
         expect(cursor).toBe(to.cursor)
     })
+
+    it('moves function argument with string literal left', () => {
+        const from = codeCursor('onSubmit(varA, vatB, ┇"something")')
+        const to = codeCursor('onSubmit(varA, ┇"something", vatB)')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('moves function argument with string containing comma', () => {
+        const from = codeCursor('fn(┇a, "hello, world", c)')
+        const to = codeCursor('fn("hello, world", ┇a, c)')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, +1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('moves string argument with comma inside to the left', () => {
+        const from = codeCursor('fn(a, ┇"hello, world", c)')
+        const to = codeCursor('fn(┇"hello, world", a, c)')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('moves string argument when cursor is inside the string', () => {
+        const from = codeCursor('fn(a, "hello, ┇world", c)')
+        const to = codeCursor('fn("hello, ┇world", a, c)')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, -1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
+
+    it('moves string argument right when cursor is inside the string', () => {
+        const from = codeCursor('fn(a, "fox ┇example here", c)')
+        const to = codeCursor('fn(a, c, "fox ┇example here")')
+
+        const { text, cursor } = manipulateLine(from.code, from.cursor, +1)
+        expect(text).toBe(to.code)
+        expect(cursor).toBe(to.cursor)
+    })
 })
